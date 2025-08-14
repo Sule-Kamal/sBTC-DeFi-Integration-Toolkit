@@ -319,3 +319,106 @@
     fee-adjustment-frequency: uint
   }
 )
+
+;; STAKING DERIVATIVES
+(define-map liquid-staking-tokens
+  { lst-token: principal }
+  {
+    underlying-token: principal,
+    exchange-rate: uint,
+    total-staked: uint,
+    total-lst-supply: uint,
+    staking-rewards: uint,
+    last-rebase: uint
+  }
+)
+
+(define-map staking-positions
+  { user: principal, token: principal }
+  {
+    staked-amount: uint,
+    lst-amount: uint,
+    rewards-earned: uint,
+    last-claim: uint
+  }
+)
+
+;; PREDICTION MARKETS
+(define-map prediction-markets
+  { market-id: uint }
+  {
+    creator: principal,
+    question: (string-ascii 200),
+    outcome-options: (list 10 (string-ascii 50)),
+    total-volume: uint,
+    resolution-source: principal,
+    expires-at: uint,
+    is-resolved: bool,
+    winning-outcome: (optional uint)
+  }
+)
+
+(define-map market-positions
+  { market-id: uint, user: principal, outcome: uint }
+  {
+    shares: uint,
+    average-price: uint,
+    potential-payout: uint
+  }
+)
+
+;; PERPETUAL FUTURES
+(define-map perp-positions
+  { position-id: uint }
+  {
+    trader: principal,
+    asset: principal,
+    size: int, ;; Positive for long, negative for short
+    entry-price: uint,
+    margin: uint,
+    leverage: uint,
+    funding-rate: int,
+    last-funding-payment: uint,
+    is-active: bool
+  }
+)
+
+(define-map perp-markets
+  { asset: principal }
+  {
+    mark-price: uint,
+    index-price: uint,
+    funding-rate: int,
+    open-interest-long: uint,
+    open-interest-short: uint,
+    max-leverage: uint,
+    maintenance-margin: uint
+  }
+)
+
+(define-public (create-proposal 
+  (title (string-ascii 100))
+  (description (string-ascii 500))
+  (proposal-type (string-ascii 20))
+  (target-value uint))
+  (let ((proposal-id (var-get next-proposal-id))
+        (user-tokens (default-to u0 (get balance (map-get? governance-tokens { holder: tx-sender })))))
+    (asserts! (>= user-tokens (var-get min-proposal-threshold)) err-insufficient-voting-power)
+    (asserts! (not (var-get emergency-shutdown)) err-pool-frozen)
+    (map-set governance-proposals
+      { proposal-id: proposal-id }
+      {
+        proposer: tx-sender,
+        title: title,
+        description: description,
+        proposal-type: proposal-type,
+        target-value: target-value,
+        votes-for: u0,
+        votes-against: u0,
+        status: "active",
+        created-at: stacks-block-height,
+        voting-ends-at: (+ stacks-block-height (var-get voting-period)),
+        execution-delay: u144 ;; 1 day delay after voting ends
+      })
+    (var-set next-proposal-id (+ proposal-id u1))
+    (ok proposal-id)))
