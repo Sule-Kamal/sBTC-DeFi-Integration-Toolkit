@@ -206,3 +206,69 @@
     last-updated: uint
   }
 )
+
+;; FLASH LOAN SYSTEM
+(define-map flash-loans
+  { loan-id: uint }
+  {
+    borrower: principal,
+    token: principal,
+    amount: uint,
+    fee: uint,
+    is-repaid: bool,
+    created-at: uint,
+    expires-at: uint
+  }
+)
+
+;; INSURANCE VAULTS
+(define-map insurance-vaults
+  { vault-id: uint }
+  {
+    vault-type: (string-ascii 20),
+    total-coverage: uint,
+    premium-rate: uint,
+    covered-protocols: (list 10 principal),
+    claims-reserve: uint,
+    is-active: bool,
+    created-at: uint
+  }
+)
+
+(define-map insurance-policies
+  { policy-id: uint }
+  {
+    vault-id: uint,
+    insured: principal,
+    coverage-amount: uint,
+    premium-paid: uint,
+    expires-at: uint,
+    is-active: bool
+  }
+)
+
+;; CROSS-CHAIN BRIDGE
+(define-map bridge-transfers
+  { transfer-id: (buff 32) }
+  {
+    sender: principal,
+    recipient: (buff 64), ;; Address on target chain
+    token: principal,
+    amount: uint,
+    target-chain: (string-ascii 20),
+    status: (string-ascii 20),
+    proof: (optional (buff 256)),
+    created-at: uint,
+    completed-at: (optional uint)
+  }
+)
+
+(define-map bridge-validators
+  { validator: principal }
+  {
+    is-active: bool,
+    stake-amount: uint,
+    reputation-score: uint,
+    last-validation: uint
+  }
+)
