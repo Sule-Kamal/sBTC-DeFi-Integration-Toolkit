@@ -135,3 +135,74 @@
 (define-data-var governance-token-supply uint u1000000)
 (define-data-var min-proposal-threshold uint u10000)
 (define-data-var voting-period uint u1440) ;; 1440 blocks (~24 hours)
+
+;; GOVERNANCE SYSTEM
+(define-map governance-proposals
+  { proposal-id: uint }
+  {
+    proposer: principal,
+    title: (string-ascii 100),
+    description: (string-ascii 500),
+    proposal-type: (string-ascii 20),
+    target-value: uint,
+    votes-for: uint,
+    votes-against: uint,
+    status: (string-ascii 20),
+    created-at: uint,
+    voting-ends-at: uint,
+    execution-delay: uint
+  }
+)
+
+(define-map governance-votes
+  { proposal-id: uint, voter: principal }
+  {
+    vote-power: uint,
+    vote-direction: bool, ;; true = for, false = against
+    voted-at: uint
+  }
+)
+
+(define-map governance-tokens
+  { holder: principal }
+  {
+    balance: uint,
+    delegated-to: (optional principal),
+    voting-power: uint,
+    last-delegation-change: uint
+  }
+)
+
+;; LENDING/BORROWING PROTOCOL
+(define-map lending-pools
+  { token: principal }
+  {
+    total-supplied: uint,
+    total-borrowed: uint,
+    supply-rate: uint,
+    borrow-rate: uint,
+    utilization-rate: uint,
+    reserve-factor: uint,
+    last-updated: uint,
+    is-active: bool
+  }
+)
+
+(define-map user-supplies
+  { token: principal, user: principal }
+  {
+    supplied-amount: uint,
+    supply-index: uint,
+    last-updated: uint
+  }
+)
+
+(define-map user-borrows
+  { token: principal, user: principal }
+  {
+    borrowed-amount: uint,
+    borrow-index: uint,
+    collateral-factor: uint,
+    last-updated: uint
+  }
+)
