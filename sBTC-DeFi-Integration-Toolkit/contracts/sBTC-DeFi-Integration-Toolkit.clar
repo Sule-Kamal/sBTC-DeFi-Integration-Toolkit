@@ -67,3 +67,71 @@
     last-stake-height: uint
   }
 )
+
+(define-map atomic-swaps
+  { swap-id: (buff 32) }
+  {
+    initiator: principal,
+    recipient: principal,
+    sbtc-amount: uint,
+    btc-amount: uint,
+    hash-lock: (buff 32),
+    time-lock: uint,
+    status: (string-ascii 20),
+    created-at: uint
+  }
+)
+
+(define-map oracle-price-feeds
+  { token: principal }
+  {
+    price-in-sats: uint,
+    last-updated: uint,
+    provider: principal
+  }
+)
+
+(define-public (set-protocol-fee (new-fee uint))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (asserts! (< new-fee u100) err-invalid-params) ;; Fee can't exceed 10%
+    (ok (var-set protocol-fee new-fee))
+  )
+)
+
+(define-public (set-fee-recipient (new-recipient principal))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (ok (var-set fee-recipient new-recipient))
+  )
+)
+
+(define-public (toggle-emergency-shutdown)
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (ok (var-set emergency-shutdown (not (var-get emergency-shutdown))))
+  )
+)
+
+;; Additional error constants for new features
+(define-constant err-proposal-not-found (err u109))
+(define-constant err-voting-ended (err u110))
+(define-constant err-already-voted (err u111))
+(define-constant err-insufficient-voting-power (err u112))
+(define-constant err-loan-not-found (err u113))
+(define-constant err-loan-not-due (err u114))
+(define-constant err-insufficient-collateral (err u115))
+(define-constant err-vault-not-found (err u116))
+(define-constant err-invalid-signature (err u117))
+(define-constant err-nft-not-found (err u118))
+(define-constant err-auction-ended (err u119))
+(define-constant err-invalid-bid (err u120))
+
+;; Additional data variables for new features
+(define-data-var next-proposal-id uint u1)
+(define-data-var next-loan-id uint u1)
+(define-data-var next-vault-id uint u1)
+(define-data-var next-auction-id uint u1)
+(define-data-var governance-token-supply uint u1000000)
+(define-data-var min-proposal-threshold uint u10000)
+(define-data-var voting-period uint u1440) ;; 1440 blocks (~24 hours)
