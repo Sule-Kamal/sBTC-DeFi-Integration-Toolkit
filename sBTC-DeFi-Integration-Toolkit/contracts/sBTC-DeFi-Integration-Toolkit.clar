@@ -422,3 +422,25 @@
       })
     (var-set next-proposal-id (+ proposal-id u1))
     (ok proposal-id)))
+
+(define-public (vote-on-proposal (proposal-id uint) (vote-for bool))
+  (let ((proposal (unwrap! (map-get? governance-proposals { proposal-id: proposal-id }) err-proposal-not-found))
+        (user-voting-power (default-to u0 (get voting-power (map-get? governance-tokens { holder: tx-sender })))))
+    (asserts! (< stacks-block-height (get voting-ends-at proposal)) err-voting-ended)
+    (asserts! (is-none (map-get? governance-votes { proposal-id: proposal-id, voter: tx-sender })) err-already-voted)
+    (asserts! (> user-voting-power u0) err-insufficient-voting-power)
+    
+    ;; Record the vote
+    (map-set governance-votes
+      { proposal-id: proposal-id, voter: tx-sender }
+      { vote-power: user-voting-power, vote-direction: vote-for, voted-at: stacks-block-height })
+    
+    ;; Update proposal vote counts
+    (if vote-for
+      (map-set governance-proposals
+        { proposal-id: proposal-id }
+        (merge proposal { votes-for: (+ (get votes-for proposal) user-voting-power) }))
+      (map-set governance-proposals
+        { proposal-id: proposal-id }
+        (merge proposal { votes-against: (+ (get votes-against proposal) user-voting-power) })))
+    (ok true)))
